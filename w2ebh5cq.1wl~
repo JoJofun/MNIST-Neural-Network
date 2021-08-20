@@ -1,0 +1,296 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace MNISTForms
+{
+    class neuralnet
+    {
+        public int numLayers = 2;
+
+        inputlayer x = new inputlayer(784);
+        outputlayer z = new outputlayer(10);
+
+        List<layer> layerlist = new List<layer>();
+        List<weightmatrix> matrixlist = new List<weightmatrix>();
+
+        double lr = 0.125; //learning rate
+
+        public neuralnet()
+        {
+            layerlist.Add(x);
+            layerlist.Add(z);
+            addLayer(10);
+        }
+
+        int truth;//truth value -1 for none, 0-9 for, well 0-9
+
+        public void train_sample(inputlayer input, int train_truth)
+        {
+            List<layer> trainlist = new List<layer>();
+            double sum = 0;
+            layer curr = input;
+            layer next;
+
+
+            for (int i = 0; i < numLayers - 1; i++)
+            {
+                next = new hiddenlayer(layerlist[i + 1]);
+                weightmatrix mtx = matrixlist[i];
+                for (int j = 0; j < next.getSize(); j++)
+                {
+                    for (int k = 0; k < curr.getSize(); k++)
+                    {
+                        sum += curr.a[k] * mtx.matrix[j,k];//multiply and add to sum
+                    }
+
+                    //add bias
+                    sum += next.b[j];
+                    next.a[j] = Math.Tanh(sum);
+                }
+                trainlist.Add(curr);
+                curr = next;
+            }
+            trainlist.Add(curr);
+
+
+
+
+            //backpropagation
+            //Console.WriteLine(train_truth);
+            double[] Truth = new double[10];
+
+            Truth[train_truth] = 1.0;
+            for (int i = 0; i < 10; i++)
+            {
+                curr.berr[i] = (curr.a[i] - Truth[i]) * (1.0 - curr.a[i] * curr.a[i]);
+                curr.b[i] = curr.b[i] - (lr * curr.berr[i]);
+            }
+
+
+
+            for (int i = numLayers - 2; i >= 0; i--)
+            {
+
+
+                curr = trainlist[i];
+                next = trainlist[i + 1];
+                /*
+                Console.WriteLine(i);
+
+                Console.WriteLine("I: " + i);
+                matrixlist[i].prntsiz();
+                Console.WriteLine("Curr: " + curr.getSize());
+                Console.WriteLine("Next: " + next.getSize());
+                */
+
+                for (int j = 0; j < next.getSize(); j++)
+                {
+                    for (int k = 0; k < curr.getSize(); k++){
+                        
+                        matrixlist[i].average_err[j,k] = curr.a[k] * next.berr[j];
+                        
+                        matrixlist[i].average_err[j, k] = matrixlist[i].average_err[j, k];
+                        matrixlist[i].matrix[j, k] = matrixlist[i].matrix[j, k];// - lr * matrixlist[i].average_err[k,j];
+                    }
+                }
+
+                if (i != 0)
+                {
+                    for (int j = 0; j < curr.getSize(); j++)
+                    {
+                        double temp = 0.0;
+                        for (int k = 0; k < next.getSize(); k++)
+                        {
+                            temp += (next.berr[k] * matrixlist[i].matrix[k,j]);
+                        }
+                        curr.berr[j] = (1.0 - curr.a[j] * curr.a[j]) * temp;
+                        curr.b[j] = curr.b[j] - lr * curr.berr[j];
+                    }
+                }
+                
+
+
+            }
+
+        }
+
+    public void addLayer(int size)//adds layer right before the end
+        {
+            int prevsyze = layerlist[numLayers - 2].getSize();//get size of layer before the one being inserted
+            layerlist.Insert(numLayers-1, new hiddenlayer(size));
+            int nextsyze = layerlist[numLayers].getSize();
+            if (numLayers != 2)
+            {
+                matrixlist.RemoveAt(numLayers - 2);
+            }
+            
+            matrixlist.Add(new weightmatrix(prevsyze, size));
+            matrixlist.Add(new weightmatrix(size,nextsyze));
+
+
+            numLayers++;
+
+        }
+
+        private bool removeLayer(int index)//removes the layer at specified index
+        {
+            if (index == 0 || index == numLayers-1 || numLayers <= 3)
+            {
+                return false;
+            }
+
+            matrixlist.RemoveAt(index);
+            matrixlist.RemoveAt(index-1);
+            layerlist.RemoveAt(index);
+
+            int prevsyze = layerlist[index - 1].getSize();
+            int nextsyze = layerlist[index].getSize();
+            matrixlist.Insert(index - 1, new weightmatrix(prevsyze, nextsyze));
+
+
+            return true;
+
+        }
+
+        public bool removeLayer()
+        {
+            return removeLayer(numLayers - 2);
+        }
+
+        public void goForward()
+        {
+            for(int i = 0; i < numLayers-1; i++)
+            {
+                //Console.WriteLine("Layers " + i + " and " + (i + 1) + " dim: " + layerlist[i].getSize() + " x " + layerlist[i + 1].getSize());
+                double sum = 0;
+                layer curr = layerlist[i];
+                layer next = layerlist[i + 1];
+                weightmatrix mtx = matrixlist[i];
+                for (int j = 0; j < next.getSize(); j++)
+                {
+                    for(int k = 0; k < curr.getSize(); k++)
+                    {
+                        sum += curr.a[k] * mtx.matrix[j, k];//multiply and add to sum
+                    }
+
+                    //add bias
+                    sum += next.b[j];
+                    next.a[j] = Math.Tanh(sum);
+                }
+            }
+        }
+
+        /*public void read_line(int lineno)
+        {
+            truth = x.readcsv(lineno);
+        }*/
+
+        public void test()
+        {
+            for (int i = 0; i < 10; i++)
+            {
+                //Console.WriteLine(i + "  value: " + z.a[i]);
+            }
+        }
+
+        public bool read_image(string fylename)
+        {
+            if (!File.Exists(@fylename))
+            {
+                return false;
+            }
+
+            Bitmap input = new Bitmap(@fylename);
+            if (input.Width != 28 || input.Height != 28)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < 28; i++)
+            {
+                for (int j = 0; j < 28; j++)
+                {
+                    Color pixel = input.GetPixel(i, j);
+                    int grey = pixel.R + pixel.G + pixel.B;//it should already be greyscale but  im doing htis just in case
+                    x.a[(i + 28 * j)] = grey / 255.0;
+                }
+            }
+            truth = -1;
+            return true;
+        }
+
+        public void testpritn()
+        {
+            for (int i = 0; i < 28; i++)
+            {
+                string temp = "";
+                for (int j = 0; j < 28; j++)
+                {
+                    if (x.a[i * 28 + j] == 0)
+                    {
+                        temp += ' ';
+                    }
+                    else
+                    {
+                        temp += '#';
+                    }
+                }
+                Console.WriteLine(temp);
+            }
+        }
+
+        public void print_guess()
+        {
+            Console.WriteLine(z.get_guess());
+            for (int i = 0; i < 10; i++)
+            {
+                Console.WriteLine(i + ": " + z.a[i]);
+            }
+        }
+        
+
+        public void train()
+        {
+            System.IO.StreamReader file = new System.IO.StreamReader(@Directory.GetParent(System.IO.Directory.GetCurrentDirectory()).Parent.FullName + "\\mnist_train.csv");
+            for (int i = 0; i < 60000; i++)
+            {
+                inputlayer x = new inputlayer(784);
+                int t = x.readcsv(file);
+                train_sample(x, t);
+
+                Console.WriteLine(i +  " DONE!");
+            }
+        }
+
+
+
+        /*
+    static int SIZE = 28;
+    static int SIZ2 = SIZE * SIZE;
+    short[,] display = new short[SIZE,SIZE];//siz2 is size^2, im not great at coming up with names
+    float[] input = new float[SIZE*SIZE];//input layer size
+
+    static int HLSIZE = 16;//hidden layer size
+    float[,] w = new float[HLSIZE, SIZ2];
+    float[] b = new float[HLSIZE];
+    float[] s = new float[HLSIZE];
+    float[] y = new float[HLSIZE];
+
+    int const OSIZE = 10; // output size;
+    float u[OSIZE][HLSIZE];
+    float c[OSIZE];
+    float r[OSIZE];
+    float z[OSIZE];
+
+    //error correction stuff
+    float error;
+    float t[OSIZE];
+    float lr = 0.05;//learning rate
+        */
+    }
+}

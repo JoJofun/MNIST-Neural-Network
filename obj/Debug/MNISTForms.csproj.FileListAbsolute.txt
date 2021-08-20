@@ -1,0 +1,10 @@
+C:\Users\Nick\source\repos\MNISTForms\bin\Debug\MNISTForms.exe.config
+C:\Users\Nick\source\repos\MNISTForms\bin\Debug\MNISTForms.exe
+C:\Users\Nick\source\repos\MNISTForms\bin\Debug\MNISTForms.pdb
+C:\Users\Nick\source\repos\MNISTForms\obj\Debug\MNISTForms.csprojAssemblyReference.cache
+C:\Users\Nick\source\repos\MNISTForms\obj\Debug\MNISTForms.Form1.resources
+C:\Users\Nick\source\repos\MNISTForms\obj\Debug\MNISTForms.Properties.Resources.resources
+C:\Users\Nick\source\repos\MNISTForms\obj\Debug\MNISTForms.csproj.GenerateResource.cache
+C:\Users\Nick\source\repos\MNISTForms\obj\Debug\MNISTForms.csproj.CoreCompileInputs.cache
+C:\Users\Nick\source\repos\MNISTForms\obj\Debug\MNISTForms.exe
+C:\Users\Nick\source\repos\MNISTForms\obj\Debug\MNISTForms.pdb
